@@ -13,3 +13,6 @@ print("Python {}".format(sys.version))
 print('Pandas {}'.format(pd.__version__))
 print('Scikit-Learn {}'.format(sk.__version__))
 print('OpenCV {}'.format(cv2.__version__))
+
+
+print('Hi')
