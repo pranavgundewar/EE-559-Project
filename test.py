@@ -16,4 +16,4 @@ print('OpenCV {}'.format(cv2.__version__))
 
 
 print('Hi')
-print('Hi')
+print('YOLO')
