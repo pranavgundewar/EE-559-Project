@@ -36,26 +36,9 @@ def one_hot_encode_features(data):
     print(main_poutcome_features)
 
 
-def one_hot(df, cols):
-    """
-    @param df pandas DataFrame
-    @param cols a list of columns to encode
-    @return a DataFrame with one-hot encoding
-    """
-    for each in cols:
-        dummies = pd.get_dummies(df[each], prefix=each, drop_first=True)
-        df = pd.concat([df, dummies], axis=1)
-    return df
-
-
 def main():
     data = split_files()
     one_hot_encode_features(data)
-
-    cols = ['poutcome']
-    print('Columns to be one-hot encoded:',cols)
-    df1 = one_hot(data, cols)
-    print(df1)
 
 if __name__ == '__main__':
     main()
