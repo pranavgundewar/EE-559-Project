@@ -71,7 +71,7 @@ def one_hot(df, cols):
     @return a DataFrame with one-hot encoding
     """
     for each in cols:
-        dummies = pd.get_dummies(df[each], prefix=each, drop_first=True)
+        dummies = pd.get_dummies(df[each], prefix=each, drop_first=False)
         df = pd.concat([df, dummies], axis=1)
     return df
 cols = ['job', 'marital', 'education']
