@@ -4,7 +4,6 @@ Created on Tue Apr 10 19:56:13 2018
 
 @author: tchat
 """
-
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -20,11 +19,13 @@ from sklearn import svm
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
 
+#%%
 # Import data and split input and target features
-data = pd.read_csv(r'OnlineNewsPopularityReduced.csv', skipinitialspace = True)
+data = pd.read_csv('OnlineNewsPopularityReduced.csv', skipinitialspace = True)
 data_Y = data['shares']
 data_X = data.drop(['url', 'timedelta', 'shares'], axis=1)
 
+#%%
 # Binarizing Target Feature by Median
 perc_95 = np.percentile(data_Y.values, 95)
 perc_5 = np.percentile(data_Y.values, 5)
@@ -45,20 +46,20 @@ input_feats.columns  = ['name', 'dtype']
 input_feats['mean']  = data_X.mean().reset_index(drop=True)
 input_feats['std']   = data_X.std().reset_index(drop=True)
 input_feats['range'] = (data_X.max() - data_X.min()).reset_index(drop=True)
-input_feats['unique_values_count'] = data_X.apply(uniqueValueCount, axis=0).reset_index(drop=True)   
+input_feats['unique_values_count'] = data_X.apply(uniqueValueCount, axis=0).reset_index(drop=True)
 input_feats['outliers_count'] = data_X.apply(outlierCounts, axis=0).reset_index(drop=True)
 
 # Merge Binary Features
 def MergeFeatures(data, old_features, new_feature):
-    
+
     counter = 0
     data[new_feature] = counter
-    
+
     for old_feature in old_features:
         counter = counter + 1
         data.loc[data[old_feature] == 1, new_feature] = counter
         del data[old_feature]
-        
+
     return data
 
 data_channels = [
@@ -100,7 +101,7 @@ arr_X = data_X.values
 arr_X = standarize(arr_X)
 
 # Binarize the Target Feature
-arr_Y = prep.binarize(data_Y.values.reshape(-1, 1), threshold=1400) 
+arr_Y = prep.binarize(data_Y.values.reshape(-1, 1), threshold=1400)
 data_Y  = pd.Series(arr_Y.ravel())
 
 #unique_items, counts = np.unique(arr_Y, return_counts=True)
@@ -128,7 +129,7 @@ ACC = np.zeros((10,10))
 DEV = np.zeros((10,10))
 
 for i, gamma in enumerate(gammas):
-    for j, C in enumerate(Cs):  
+    for j, C in enumerate(Cs):
         acc = []
         for train_index, dev_index in skf.split(X_train_pca, y_train):
             X_cv_train, X_cv_dev = X_train_pca[train_index], X_train_pca[dev_index]
@@ -136,7 +137,7 @@ for i, gamma in enumerate(gammas):
             clf = SVC(C = C, kernel = 'rbf', gamma = gamma, )
             clf.fit(X_cv_train, y_cv_train)
             acc.append(accuracy_score(y_cv_dev, clf.predict(X_cv_dev)))
-        
+
         ACC[i,j] = np.mean(acc)
         DEV[i,j] = np.std(acc)
 
@@ -225,5 +226,3 @@ clf1.fit(X_train, y_train)
 y_pred = clf1.predict(X_test)
 acc = accuracy_score(y_test, y_pred)
 print('Test accuracy  = ', acc)
-    
-
