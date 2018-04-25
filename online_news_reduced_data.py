@@ -38,42 +38,52 @@ from sklearn import metrics as m
 from sklearn.model_selection import StratifiedShuffleSplit
 
 
+##%%
+## Import data and split input and target features
+#data_original = pd.read_csv('OnlineNewsPopularityReduced.csv', skipinitialspace = True)
+#
+##Data for linear regression
+#data_reg_Y = data_original['shares']
+#data_reg_X = data_original.drop(['url', 'timedelta', 'kw_max_max', 'shares'], axis=1)
+#
+##Data for classification algorithms
+#data = data_original.drop(['url', 'timedelta', 'kw_max_max'], axis=1)
+#
+#popular = data['shares'] > 1600
+#not_popular = data['shares'] <= 1600
+#
+#popular_1 = data['shares'] <= 900
+#popular_2 = (data['shares'] > 900) & (data['shares'] <= 1200)
+#popular_3 = (data['shares'] > 1200) & (data['shares'] <= 1600)
+#popular_4 = (data['shares'] > 1600) & (data['shares'] <= 3400)
+#popular_5 = data['shares'] > 3400
+#
+#data.loc[popular,'two_class_popularity'] = 1
+#data.loc[not_popular,'two_class_popularity'] = 0
+#
+#data.loc[popular_1,'multi_class_popularity'] = 1
+#data.loc[popular_2,'multi_class_popularity'] = 2
+#data.loc[popular_3,'multi_class_popularity'] = 3
+#data.loc[popular_4,'multi_class_popularity'] = 4
+#data.loc[popular_5,'multi_class_popularity'] = 5
+#
+#data = data.drop(['shares'], axis=1)
+#
+#data_multiclass_Y = data['multi_class_popularity']
+#data_twoclass_Y = data['two_class_popularity']
+#data_X = data.drop(['two_class_popularity','multi_class_popularity'],axis=1)
+#
+##data.to_csv('ModifiedOnlineNewsPopularityReduced.csv',index=False)
+
 #%%
-# Import data and split input and target features
-data_original = pd.read_csv('OnlineNewsPopularityReduced.csv', skipinitialspace = True)
+#Import modified data
+data_original = pd.read_csv('ModifiedOnlineNewsPopularityReduced_input.csv', skipinitialspace = True)
 
 #Data for linear regression
 data_reg_Y = data_original['shares']
-data_reg_X = data_original.drop(['url', 'timedelta', 'kw_max_max', 'shares'], axis=1)
-
-#Data for classification algorithms
-data = data_original.drop(['url', 'timedelta', 'kw_max_max'], axis=1)
-
-popular = data['shares'] > 1600
-not_popular = data['shares'] <= 1600
-
-popular_1 = data['shares'] <= 900
-popular_2 = (data['shares'] > 900) & (data['shares'] <= 1200)
-popular_3 = (data['shares'] > 1200) & (data['shares'] <= 1600)
-popular_4 = (data['shares'] > 1600) & (data['shares'] <= 3400)
-popular_5 = data['shares'] > 3400
-
-data.loc[popular,'two_class_popularity'] = 1
-data.loc[not_popular,'two_class_popularity'] = 0
-
-data.loc[popular_1,'multi_class_popularity'] = 1
-data.loc[popular_2,'multi_class_popularity'] = 2
-data.loc[popular_3,'multi_class_popularity'] = 3
-data.loc[popular_4,'multi_class_popularity'] = 4
-data.loc[popular_5,'multi_class_popularity'] = 5
-
-data = data.drop(['shares'], axis=1)
-
-data_multiclass_Y = data['multi_class_popularity']
-data_twoclass_Y = data['two_class_popularity']
-data_X = data.drop(['two_class_popularity','multi_class_popularity'],axis=1)
-
-#data.to_csv('ModifiedOnlineNewsPopularityReduced.csv',index=False)
+data_twoclass_Y = data_original['two_class_popularity']
+data_multiclass_Y = data_original['multi_class_popularity']
+data_X = data_original.drop(['shares','two_class_popularity','multi_class_popularity','Unnamed: 41'], axis=1)
 
 #%%
 def PCA_dim_reduction(X,dim):
@@ -196,7 +206,7 @@ def run_network(network, X, Y, epochs=50):
     return model_result
 
 #%%
-Non_linear_SVM(data_X.values, data_twoclass_Y.values, C=1000, gamma=0.0001, PCA=True, dim=20, norm =True)
+Non_linear_SVM(data_X.values, data_twoclass_Y.values, C=1000, gamma=0.001, PCA=False, dim=20, norm =True)
     
 #%%
 run_nn(data_X.values, data_multiclass_Y.values, hidden_layers=[64,100,100,350,500,350,100,64,20]) 
@@ -207,7 +217,7 @@ classifiers = {'Gradient Boosting Classifier':GradientBoostingClassifier(),'Adap
                'Logistic Regression':LogisticRegression(),'Random Forest Classifier': RandomForestClassifier(),
                'K Nearest Neighbour':KNeighborsClassifier(7),'Decision Tree Classifier'
                :DecisionTreeClassifier(),'Gaussian Naive Bayes Classifier':GaussianNB(),
-               'Support Vector Classifier':SVC(probability=True), 'Support Vector Classifier Linear':SVC(probability=True, kernel='linear')}
+               'Support Vector Classifier':SVC(probability=True, C=1000, gamma=0.001), 'Support Vector Classifier Linear':SVC(probability=True, kernel='linear', C=1000)}
 
 log_cols = ["Classifier", "Accuracy","F1-Score","roc-auc_Score"] #"Precision Score","Recall Score",]
 #metrics_cols = []
@@ -223,6 +233,7 @@ for Name,classify in classifiers.items():
     recall=[]
     roc_auc=[]
     f1_score=[]
+    print('Training: ', Name)
     for train_index, test_index in rs.split(X_train,y_train):
         #print("TRAIN:", train_index, "TEST:", test_index)
         y,y_test = y_train.iloc[train_index], y_train.iloc[test_index]
