@@ -26,7 +26,7 @@ from sklearn.metrics import roc_auc_score
 import seaborn as sns
 from imblearn.combine import SMOTEENN
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
-from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LogisticRegression, Perceptron
 from sklearn import metrics as m
 from sklearn.model_selection import StratifiedShuffleSplit
 
@@ -88,8 +88,8 @@ PCA
 # AdaBoostClassifier(),
 # GaussianNB(), SVC(gamma=2, C=1)] 
 #
-#import warnings
-#warnings.filterwarnings('ignore')
+import warnings
+warnings.filterwarnings('ignore')
 #print("Comparing different models:\n")
 #for name, clf in zip(clsr_names, classifiers):
 #    model=clf.fit(X_train,y_train)
@@ -104,7 +104,8 @@ classifiers = {'Gradient Boosting Classifier':GradientBoostingClassifier(),'Adap
                'Logistic Regression':LogisticRegression(),'Random Forest Classifier': RandomForestClassifier(),
                'K Nearest Neighbour':KNeighborsClassifier(7),'Decision Tree Classifier'
                :DecisionTreeClassifier(),'Gaussian Naive Bayes Classifier':GaussianNB(),
-               'Support Vector Classifier':SVC(probability=True), 'Support Vector Classifier Linear':SVC(probability=True, kernel='linear')}
+               'Support Vector Classifier':SVC(probability=True), 'Support Vector Classifier Linear':SVC(probability=True, kernel='linear'),
+               'Perceptron':Perceptron(penalty='l2', max_iter = 1000)}
 
 log_cols = ["Classifier", "Accuracy","F1-Score","roc-auc_Score"] #"Precision Score","Recall Score",]
 #metrics_cols = []
@@ -152,13 +153,15 @@ for Name,classify in classifiers.items():
         sc_X = StandardScaler()
         X = sc_X.fit_transform(X)
         X_test = sc_X.transform(X_test)
+#        sm = SMOTEENN()
+#        X, y = sm.fit_sample(X, y)
         cls = classify
         cls =cls.fit(X,y)
         y_out = cls.predict(X_test)
         accuracy.append(m.accuracy_score(y_test,y_out))
         precision.append(m.precision_score(y_test,y_out,average='weighted'))
         recall.append(m.recall_score(y_test,y_out,average='weighted'))
-        roc_auc.append(roc_auc_score(y_out,y_test))
+        roc_auc.append(roc_auc_score(y_out,y_test,average='weighted'))
         f1_score.append(m.f1_score(y_test,y_out,average='weighted'))
     acc = np.max(accuracy)
     p = np.mean(precision)
