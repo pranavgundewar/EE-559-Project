@@ -83,7 +83,7 @@ data_original = pd.read_csv('ModifiedOnlineNewsPopularityReduced_input.csv', ski
 data_reg_Y = data_original['shares']
 data_twoclass_Y = data_original['two_class_popularity']
 data_multiclass_Y = data_original['multi_class_popularity']
-data_X = data_original.drop(['shares','two_class_popularity','multi_class_popularity','Unnamed: 41'], axis=1)
+data_X = data_original.drop(['shares','two_class_popularity','multi_class_popularity', 'Unnamed: 40'], axis=1)
 
 #%%
 def PCA_dim_reduction(X,dim):
@@ -206,7 +206,7 @@ def run_network(network, X, Y, epochs=50):
     return model_result
 
 #%%
-Non_linear_SVM(data_X.values, data_twoclass_Y.values, C=1000, gamma=0.001, PCA=False, dim=20, norm =True)
+Non_linear_SVM(data_X.values, data_twoclass_Y.values, C=100, gamma=0.0001, PCA=True, dim=25, norm =True)
     
 #%%
 run_nn(data_X.values, data_multiclass_Y.values, hidden_layers=[64,100,100,350,500,350,100,64,20]) 
@@ -217,7 +217,7 @@ classifiers = {'Gradient Boosting Classifier':GradientBoostingClassifier(),'Adap
                'Logistic Regression':LogisticRegression(),'Random Forest Classifier': RandomForestClassifier(),
                'K Nearest Neighbour':KNeighborsClassifier(7),'Decision Tree Classifier'
                :DecisionTreeClassifier(),'Gaussian Naive Bayes Classifier':GaussianNB(),
-               'Support Vector Classifier':SVC(probability=True, C=1000, gamma=0.001), 'Support Vector Classifier Linear':SVC(probability=True, kernel='linear', C=1000)}
+               'Support Vector Classifier':SVC(probability=True, C=1000, gamma=0.001)}
 
 log_cols = ["Classifier", "Accuracy","F1-Score","roc-auc_Score"] #"Precision Score","Recall Score",]
 #metrics_cols = []
