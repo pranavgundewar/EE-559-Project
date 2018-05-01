@@ -33,6 +33,7 @@ from imblearn.under_sampling import EditedNearestNeighbours, CondensedNearestNei
 from sklearn.preprocessing import FunctionTransformer
 from sklearn.pipeline import make_union
 import itertools
+import handle_missing_data
 from sklearn.metrics import confusion_matrix
 # from xgboost import XGBClassifier
 import matplotlib.pyplot as plt
@@ -40,13 +41,35 @@ import matplotlib.pyplot as plt
 plt.rcParams["figure.dpi"] = 100
 
 #%%
-df = pd.read_csv("bank-additional-preprocessed-mf.csv")
+
+def one_hot(df):
+    """
+    @param df pandas DataFrame
+    @param cols a list of columns to encode 
+    @return a DataFrame with one-hot encoding
+    """
+    # One-hot encode into 
+    cols = ['job', 'marital', 'education', 'month', 'day_of_week', 'poutcome']
+    for each in cols:
+        dummies = pd.get_dummies(df[each], prefix=each, drop_first=False)
+        df = pd.concat([df, dummies], axis=1)
+    df = df.drop(cols,axis=1)
+    return df
+
+#%%
+
+df = pd.read_csv("bank-additional-preprocessed-mode.csv")
+print('Pre-Procesing the input data!\n')
+#df = handle_missing_data.main('mode')
+#df.to_csv('bank-additional-preprocessed-mode.csv')
+#df = one_hot(df)
+print('\nPre-Processing Done!\n')
+
 #df = pd.read_csv("bank-additional.csv")
-subscribed = df.y
-
-df = df.drop("y", axis=1)
-
-subscribed = subscribed == "yes"
+y = df['y'] 
+df = df.drop('y', axis=1)
+X = df.drop('default', axis=1)
+#subscribed = subscribed == "yes"
 #print(df.head())
 #print(df.shape)
 #print(df.describe())
@@ -55,14 +78,14 @@ subscribed = subscribed == "yes"
 df = df.drop("default", axis=1)
 categorical_vars = df.describe(include=["object"]).columns
 continuous_vars = df.describe().columns
-df = df.replace(to_replace=['unknown'], value = np.NaN , regex = True)
+#df = df.replace(to_replace=['unknown'], value = np.NaN , regex = True)
 #df.info()
 #print(continuous_vars)
 #print(categorical_vars)
 
 #%%
 # Creating dummy variables and finding different categorical and continous variables
-data_df, holdout_df, y_train, y_test = train_test_split(df, subscribed, test_size=0.2, stratify = subscribed)
+data_df, holdout_df, y_train, y_test = train_test_split(X, y, test_size=0.2, stratify = y)
 # Creating dummy variables
 data_dummies_df = pd.get_dummies(data_df, columns=categorical_vars, drop_first=False)
 holdout_dummies_df = pd.get_dummies(holdout_df, columns=categorical_vars, drop_first=False)
@@ -155,7 +178,7 @@ def show_conf_mat(k, conf_mat_vals):
         plot_confusion_matrix(conf_mat_vals[i],name=i)
 
 #%%
-print('Logistic Regression CV with StandardScalar: ')
+print('Logistic Regression CV with StandardScaler: ')
 fu = make_union(select_categorical, make_pipeline(select_continuous, StandardScaler()))
 pipe = make_pipeline(fu, LogisticRegressionCV())
 pipe.fit(data_dummies_df, y_train)
@@ -170,22 +193,9 @@ plot_conf_mat(y_test, y_pred, 'LRCVSS')
 #coef = pd.Series(pipe.named_steps['logisticregressioncv'].coef_.ravel(), index=data_dummies_df.columns)
 #coef.sort_values().plot(kind="barh")
 #plt.figure()
-#plot_roc_curve(y_test, y_prob, 'LRCVSS')
+plot_roc_curve(y_test, y_prob, 'LRCVSS')
 
 
-#%%
-print('Logistic Regression with Kernel: ')
-approx = Nystroem(gamma=1./data_dummies_df.shape[1], n_components=300)
-pipe_lrk = make_pipeline(StandardScaler(), approx, LogisticRegressionCV())
-pipe_lrk.fit(data_dummies_df, y_train)
-print('ROC Score: ',np.mean(cross_val_score(pipe_lrk, data_dummies_df, y_train, cv=5, scoring="roc_auc")))
-y_pred = pipe_lrk.predict(holdout_dummies_df)
-y_prob = pipe_lrk.predict_proba(holdout_dummies_df)
-print("F1: %1.3f" % f1_score(y_test, y_pred, average='weighted'))
-plot_conf_mat(y_test, y_pred, 'LRK')
-
-#%%
-plot_roc_curve(y_test, y_prob, 'LRK')
 
 #%%
 print('Logistic Regression with Feature Selection:')
@@ -284,11 +294,31 @@ plot_conf_mat(y_test, y_pred, 'DT')
 plot_roc_curve(y_test, y_prob, 'DT')
 
 #%%
+print('Support Vector Machines: ')
+svm = LinearSVC()
+params={}
+#pipe_rf = make_pipeline(StandardScaler(),svm)
+tuned_parameters = [{'kernel': ['rbf'], 'gamma': [1e-3, 1e-4],
+                     'C': [1, 10, 100, 1000]},
+                    {'kernel': ['linear'], 'C': [1, 10, 100, 1000]}]
+grid = GridSearchCV(SVC(probability=True), tuned_parameters, cv=5,scoring='roc_auc')
+#grid = GridSearchCV(pipe_rf, param_grid = params, scoring='roc_auc',n_jobs=1,iid=False, cv=5)
+grid.fit(data_dummies_df, y_train)
+print('ROC Score: ',grid.best_score_)
+y_pred = grid.predict(holdout_dummies_df)
+y_prob = grid.predict_proba(holdout_dummies_df) 
+print("F1: %1.3f" % f1_score(y_test, y_pred, average='weighted'))
+plot_conf_mat(y_test, y_pred, 'SVM')
+
+#%%
+plot_roc_curve(y_test, y_prob, 'SVM')
+
+#%%
 print('Random Forest Model 1: ')
 rf = RandomForestClassifier(warm_start=True)
 params = {'randomforestclassifier__n_estimators' : range(10,100,10),
           'randomforestclassifier__max_depth' : range(3,15,2)}
-pipe_rf = make_pipeline(RobustScaler(),rf)
+pipe_rf = make_pipeline(StandardScaler(),rf)
 grid = GridSearchCV(pipe_rf, param_grid = params, scoring='roc_auc',n_jobs=1,iid=False, cv=5)
 grid.fit(data_dummies_df, y_train)
 print('ROC Score: ',grid.best_score_)
@@ -305,7 +335,7 @@ print('Random Forest Model 2: ')
 rf = RandomForestClassifier(warm_start=True, n_estimators=100, max_depth=9)
 params = {'randomforestclassifier__max_features' : range(4, 44, 4),
           'randomforestclassifier__criterion' : ['gini', 'entropy']}
-pipe = make_pipeline(RobustScaler(),rf)
+pipe = make_pipeline(StandardScaler(),rf)
 grid = GridSearchCV(pipe,param_grid = params, scoring='roc_auc', n_jobs=1, iid=False, cv=5)
 grid.fit(data_dummies_df, y_train)
 print('ROC Score: ',grid.best_score_)
@@ -335,23 +365,6 @@ plot_conf_mat(y_test, y_pred, 'RF_final')
 
 #%%
 plot_roc_curve(y_test, y_prob, 'RF_final')
-
-#%%
-#print('Support Vector classifier: ')
-#clf = SVC(probability=True, kernel='rbf')
-#params = {'clf__C': np.logspace(-3,3,50),
-#          'clf__gamma':np.logspace(-3,3,50)}
-#pipe = make_pipeline(StandardScaler(), clf)
-#grid = GridSearchCV(pipe, param_grid = params, scoring='roc_auc', iid=False, cv=5)
-#grid.fit(data_dummies_df, y_train)
-#print('ROC Score: ',grid.best_score_)
-#y_pred = grid.predict(holdout_dummies_df)
-#y_prob = grid.predict_proba(holdout_dummies_df) 
-#print("F1: %1.3f" % f1_score(y_test, y_pred, average='weighted'))
-#plot_conf_mat(y_test, y_pred, 'SVM')
-#
-##%%
-#plot_roc_curve(y_test, y_prob, 'SVM')
 
 #%%
 print('Undersampling with Logistic Regression:')
@@ -419,7 +432,7 @@ plot_conf_mat(y_test, y_pred, 'oversample_RF')
 plot_roc_curve(y_test, y_prob, 'oversample_RF')
 
 #%%
-k = ['LRCVSS', 'LRK', 'LRFS', 'LRL', 'LRPT', 'DT','RF1','RF2','RF_final','Undersample_LogR',\
-     'oversample_LogR','Undersample_RF','oversample_RF','MLP','KNN']
+k = ['LRCVSS', 'LRFS', 'LRL', 'LRPT', 'DT','RF1','RF2','RF_final','Undersample_LogR',\
+     'oversample_LogR','Undersample_RF','oversample_RF','MLP','KNN','SVM']
 show_roc_plot(k,fpr_vals,tpr_vals)
 show_conf_mat(k,conf_mat_vals)
