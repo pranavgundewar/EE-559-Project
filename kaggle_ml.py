@@ -58,10 +58,10 @@ def one_hot(df):
 
 #%%
 
-df = pd.read_csv("bank-additional-preprocessed-mode.csv")
+df = pd.read_csv("bank-additional-preprocessed-delete.csv")
 print('Pre-Procesing the input data!\n')
-#df = handle_missing_data.main('mode')
-#df.to_csv('bank-additional-preprocessed-mode.csv')
+#df = handle_missing_data.main('delete')
+#df.to_csv('bank-additional-preprocessed-delete.csv')
 #df = one_hot(df)
 print('\nPre-Processing Done!\n')
 
@@ -179,7 +179,7 @@ def show_conf_mat(k, conf_mat_vals):
 
 #%%
 print('Logistic Regression CV with StandardScaler: ')
-fu = make_union(select_categorical, make_pipeline(select_continuous, StandardScaler()))
+fu = make_union(select_categorical, make_pipeline(select_continuous, MinMaxScaler()))
 pipe = make_pipeline(fu, LogisticRegressionCV())
 pipe.fit(data_dummies_df, y_train)
 print('ROC Score: ',np.mean(cross_val_score(pipe, data_dummies_df, y_train, cv=5, scoring="roc_auc")))
@@ -199,7 +199,7 @@ plot_roc_curve(y_test, y_prob, 'LRCVSS')
 
 #%%
 print('Logistic Regression with Feature Selection:')
-pipe_fs = make_pipeline(StandardScaler(), SelectPercentile(score_func=f_classif, percentile=50),
+pipe_fs = make_pipeline(MinMaxScaler(), SelectPercentile(score_func=f_classif, percentile=50),
                      PolynomialFeatures(interaction_only=True),
                      VarianceThreshold(),
                      LogisticRegressionCV())
@@ -216,7 +216,7 @@ plot_roc_curve(y_test, y_prob, 'LRFS')
 
 #%%
 print('MLP:')
-pipe_mlp = make_pipeline(StandardScaler(), MLPClassifier(alpha=1, hidden_layer_sizes=(160,)))
+pipe_mlp = make_pipeline(MinMaxScaler(), MLPClassifier(alpha=1, hidden_layer_sizes=(160,)))
 pipe_mlp.fit(data_dummies_df, y_train)
 print('ROC Score: ',np.max(cross_val_score(pipe_mlp, data_dummies_df, y_train, cv=5, scoring="roc_auc")))
 y_pred = pipe_mlp.predict(holdout_dummies_df)
@@ -247,7 +247,7 @@ plot_roc_curve(y_test, y_prob, 'KNN')
 #%%
 print('Logistic Regression with Lasso:')
 select_lassocv = SelectFromModel(LassoCV(), threshold="median")
-pipe_lassocv = make_pipeline(StandardScaler(), select_lassocv, LogisticRegressionCV())
+pipe_lassocv = make_pipeline(MinMaxScaler(), select_lassocv, LogisticRegressionCV())
 print('ROC Score: ', np.mean(cross_val_score(pipe_lassocv, data_dummies_df, y_train, cv=5, scoring="roc_auc")))
 pipe_lassocv.fit(data_dummies_df, y_train)
 y_pred = pipe_lassocv.predict(holdout_dummies_df)
@@ -294,24 +294,24 @@ plot_conf_mat(y_test, y_pred, 'DT')
 plot_roc_curve(y_test, y_prob, 'DT')
 
 #%%
-print('Support Vector Machines: ')
-svm = LinearSVC()
-params={}
-#pipe_rf = make_pipeline(StandardScaler(),svm)
-tuned_parameters = [{'kernel': ['rbf'], 'gamma': [1e-3, 1e-4],
-                     'C': [1, 10, 100, 1000]},
-                    {'kernel': ['linear'], 'C': [1, 10, 100, 1000]}]
-grid = GridSearchCV(SVC(probability=True), tuned_parameters, cv=5,scoring='roc_auc')
-#grid = GridSearchCV(pipe_rf, param_grid = params, scoring='roc_auc',n_jobs=1,iid=False, cv=5)
-grid.fit(data_dummies_df, y_train)
-print('ROC Score: ',grid.best_score_)
-y_pred = grid.predict(holdout_dummies_df)
-y_prob = grid.predict_proba(holdout_dummies_df) 
-print("F1: %1.3f" % f1_score(y_test, y_pred, average='weighted'))
-plot_conf_mat(y_test, y_pred, 'SVM')
-
-#%%
-plot_roc_curve(y_test, y_prob, 'SVM')
+#print('Support Vector Machines: ')
+#svm = LinearSVC()
+#params={}
+##pipe_rf = make_pipeline(StandardScaler(),svm)
+#tuned_parameters = [{'kernel': ['rbf'], 'gamma': [1e-3, 1e-4],
+#                     'C': [1, 10, 100, 1000]},
+#                    {'kernel': ['linear'], 'C': [1, 10, 100, 1000]}]
+#grid = GridSearchCV(SVC(probability=True), tuned_parameters, cv=5,scoring='roc_auc')
+##grid = GridSearchCV(pipe_rf, param_grid = params, scoring='roc_auc',n_jobs=1,iid=False, cv=5)
+#grid.fit(data_dummies_df, y_train)
+#print('ROC Score: ',grid.best_score_)
+#y_pred = grid.predict(holdout_dummies_df)
+#y_prob = grid.predict_proba(holdout_dummies_df) 
+#print("F1: %1.3f" % f1_score(y_test, y_pred, average='weighted'))
+#plot_conf_mat(y_test, y_pred, 'SVM')
+#
+##%%
+#plot_roc_curve(y_test, y_prob, 'SVM')
 
 #%%
 print('Random Forest Model 1: ')
@@ -433,6 +433,6 @@ plot_roc_curve(y_test, y_prob, 'oversample_RF')
 
 #%%
 k = ['LRCVSS', 'LRFS', 'LRL', 'LRPT', 'DT','RF1','RF2','RF_final','Undersample_LogR',\
-     'oversample_LogR','Undersample_RF','oversample_RF','MLP','KNN','SVM']
+     'oversample_LogR','Undersample_RF','oversample_RF','MLP','KNN']
 show_roc_plot(k,fpr_vals,tpr_vals)
 show_conf_mat(k,conf_mat_vals)
