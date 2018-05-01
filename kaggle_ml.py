@@ -163,20 +163,14 @@ print('ROC Score: ',np.mean(cross_val_score(pipe, data_dummies_df, y_train, cv=5
 y_pred = pipe.predict(holdout_dummies_df)
 y_prob = pipe.predict_proba(holdout_dummies_df)
 print("F1: %1.3f" % f1_score(y_test, y_pred, average='weighted'))
-#conf_mat = confusion_matrix(y_test, y_pred, labels=None, sample_weight=None)
-
-#print('tn: ', tn)
-#print('fp: ', fp)
-#print('fn: ', fn)
-#print('tp: ', tp)
 plot_conf_mat(y_test, y_pred, 'LRCVSS')
 
 #%%
-plt.figure(figsize=(5, 15))
-coef = pd.Series(pipe.named_steps['logisticregressioncv'].coef_.ravel(), index=data_dummies_df.columns)
-coef.sort_values().plot(kind="barh")
-plt.figure()
-plot_roc_curve(y_test, y_prob, 'LRCVSS')
+#plt.figure(figsize=(5, 15))
+#coef = pd.Series(pipe.named_steps['logisticregressioncv'].coef_.ravel(), index=data_dummies_df.columns)
+#coef.sort_values().plot(kind="barh")
+#plt.figure()
+#plot_roc_curve(y_test, y_prob, 'LRCVSS')
 
 
 #%%
@@ -187,7 +181,6 @@ pipe_lrk.fit(data_dummies_df, y_train)
 print('ROC Score: ',np.mean(cross_val_score(pipe_lrk, data_dummies_df, y_train, cv=5, scoring="roc_auc")))
 y_pred = pipe_lrk.predict(holdout_dummies_df)
 y_prob = pipe_lrk.predict_proba(holdout_dummies_df)
-print('ROC Score: ',roc_auc_score(y_test, y_pred))
 print("F1: %1.3f" % f1_score(y_test, y_pred, average='weighted'))
 plot_conf_mat(y_test, y_pred, 'LRK')
 
@@ -205,12 +198,41 @@ print('ROC Score: ',np.mean(cross_val_score(pipe_fs, data_dummies_df, y_train, c
 
 y_pred = pipe_fs.predict(holdout_dummies_df)
 y_prob = pipe_fs.predict_proba(holdout_dummies_df)
-print('ROC Score: ',roc_auc_score(y_test, y_pred))
 print("F1: %1.3f" % f1_score(y_test, y_pred, average='weighted'))
 plot_conf_mat(y_test, y_pred, 'LRFS')
 
 #%%
 plot_roc_curve(y_test, y_prob, 'LRFS')
+
+#%%
+print('MLP:')
+pipe_mlp = make_pipeline(StandardScaler(), MLPClassifier(alpha=1, hidden_layer_sizes=(160,)))
+pipe_mlp.fit(data_dummies_df, y_train)
+print('ROC Score: ',np.max(cross_val_score(pipe_mlp, data_dummies_df, y_train, cv=5, scoring="roc_auc")))
+y_pred = pipe_mlp.predict(holdout_dummies_df)
+y_prob = pipe_mlp.predict_proba(holdout_dummies_df)
+print("F1: %1.3f" % f1_score(y_test, y_pred, average='weighted'))
+plot_conf_mat(y_test, y_pred, 'MLP')
+
+#%%
+plot_roc_curve(y_test, y_prob, 'MLP')
+
+#%%
+print('KNN:')
+k_range = list(range(1, 15))
+knn = KNeighborsClassifier()
+param_grid = dict(n_neighbors=k_range)
+grid = GridSearchCV(knn, param_grid, cv=5, scoring='roc_auc')
+grid.fit(data_dummies_df, y_train)
+print('ROC Score: ',grid.best_score_)
+y_pred = grid.predict(holdout_dummies_df)
+y_prob = grid.predict_proba(holdout_dummies_df)
+print("F1: %1.3f" % f1_score(y_test, y_pred, average='weighted'))
+plot_conf_mat(y_test, y_pred, 'KNN')
+
+#%%
+plot_roc_curve(y_test, y_prob, 'KNN')
+
 
 #%%
 print('Logistic Regression with Lasso:')
@@ -220,7 +242,6 @@ print('ROC Score: ', np.mean(cross_val_score(pipe_lassocv, data_dummies_df, y_tr
 pipe_lassocv.fit(data_dummies_df, y_train)
 y_pred = pipe_lassocv.predict(holdout_dummies_df)
 y_prob = pipe_lassocv.predict_proba(holdout_dummies_df)
-print('ROC Score: ',roc_auc_score(y_test, y_pred))
 print("F1: %1.3f" % f1_score(y_test, y_pred, average='weighted'))
 plot_conf_mat(y_test, y_pred, 'LRL')
 
@@ -240,7 +261,6 @@ grid.fit(data_dummies_df, y_train)
 print('ROC Score: ',grid.best_score_)
 y_pred = grid.predict(holdout_dummies_df)
 y_prob = grid.predict_proba(holdout_dummies_df)
-print('ROC Score: ',roc_auc_score(y_test, y_pred))
 print("F1: %1.3f" % f1_score(y_test, y_pred, average='weighted'))
 plot_conf_mat(y_test, y_pred, 'LRPT')
 
@@ -257,7 +277,6 @@ grid.fit(data_dummies_df, y_train)
 print('ROC Score: ',grid.best_score_)
 y_pred = grid.predict(holdout_dummies_df)
 y_prob = grid.predict_proba(holdout_dummies_df) 
-print('ROC Score: ',roc_auc_score(y_test, y_pred))
 print("F1: %1.3f" % f1_score(y_test, y_pred, average='weighted'))
 plot_conf_mat(y_test, y_pred, 'DT')
 
@@ -275,7 +294,6 @@ grid.fit(data_dummies_df, y_train)
 print('ROC Score: ',grid.best_score_)
 y_pred = grid.predict(holdout_dummies_df)
 y_prob = grid.predict_proba(holdout_dummies_df) 
-print('ROC Score: ',roc_auc_score(y_test, y_pred))
 print("F1: %1.3f" % f1_score(y_test, y_pred, average='weighted'))
 plot_conf_mat(y_test, y_pred, 'RF1')
 
@@ -293,7 +311,6 @@ grid.fit(data_dummies_df, y_train)
 print('ROC Score: ',grid.best_score_)
 y_pred = grid.predict(holdout_dummies_df)
 y_prob = grid.predict_proba(holdout_dummies_df) 
-print('ROC Score: ',roc_auc_score(y_test, y_pred))
 print("F1: %1.3f" % f1_score(y_test, y_pred, average='weighted'))
 plot_conf_mat(y_test, y_pred, 'RF2')
 
@@ -313,7 +330,6 @@ grid.fit(data_dummies_df, y_train)
 print('ROC Score: ',grid.best_score_)
 y_pred = grid.predict(holdout_dummies_df)
 y_prob = grid.predict_proba(holdout_dummies_df)
-print('ROC Score: ',roc_auc_score(y_test, y_pred))
 print("F1: %1.3f" % f1_score(y_test, y_pred, average='weighted'))
 plot_conf_mat(y_test, y_pred, 'RF_final')
 
@@ -321,60 +337,21 @@ plot_conf_mat(y_test, y_pred, 'RF_final')
 plot_roc_curve(y_test, y_prob, 'RF_final')
 
 #%%
-print('Support Vector classifier: ')
-clf = SVC(probability=True, kernel='rbf')
-params = {'clf__C': np.logspace(-3,3,50),
-          'clf__gamma':np.logspace(-3,3,50)}
-pipe = make_pipeline(StandardScaler(), clf)
-grid = GridSearchCV(pipe, param_grid = params, scoring='roc_auc', iid=False, cv=5)
-grid.fit(data_dummies_df, y_train)
-print('ROC Score: ',grid.best_score_)
-y_pred = grid.predict(holdout_dummies_df)
-y_prob = grid.predict_proba(holdout_dummies_df) 
-print('ROC Score: ',roc_auc_score(y_test, y_pred))
-print("F1: %1.3f" % f1_score(y_test, y_pred, average='weighted'))
-plot_conf_mat(y_test, y_pred, 'SVM')
-
-#%%
-plot_roc_curve(y_test, y_prob, 'SVM')
-
-#%%
-#print('Gradient Boosting Classifier: ')
-#param_test = {}
-#pipe = make_pipeline(GradientBoostingClassifier(learning_rate=0.1, max_depth=5, n_estimators=80,
-#                                                 random_state=10, min_samples_split = 1000))
-#grid = GridSearchCV(pipe, param_grid = param_test, scoring='roc_auc', n_jobs=1, iid=True, cv=5)
+#print('Support Vector classifier: ')
+#clf = SVC(probability=True, kernel='rbf')
+#params = {'clf__C': np.logspace(-3,3,50),
+#          'clf__gamma':np.logspace(-3,3,50)}
+#pipe = make_pipeline(StandardScaler(), clf)
+#grid = GridSearchCV(pipe, param_grid = params, scoring='roc_auc', iid=False, cv=5)
 #grid.fit(data_dummies_df, y_train)
+#print('ROC Score: ',grid.best_score_)
 #y_pred = grid.predict(holdout_dummies_df)
-#print(grid.best_score_)
-#print('ROC Score: ',roc_auc_score(y_test, y_pred))
+#y_prob = grid.predict_proba(holdout_dummies_df) 
 #print("F1: %1.3f" % f1_score(y_test, y_pred, average='weighted'))
-
-#%%
-print('Ensembling:')
-print('Voting Classifier with Poor Mans stacking: ')
-clf1 = make_pipeline(StandardScaler(),LogisticRegressionCV(random_state=10))
-clf2 = RandomForestClassifier(warm_start=True,n_estimators=80,max_depth=9,max_features = 16, criterion = 'entropy', random_state=10)
-clf3 = GradientBoostingClassifier(learning_rate=0.1,max_depth=5, n_estimators=200, random_state=10,min_samples_split = 1000)
-
-voting = VotingClassifier([('logreg', clf1),('RandomForest', clf2),('GradientBoost',clf3)], voting='soft')
-
-print('ROC Score: ',np.mean(cross_val_score(voting, data_dummies_df, y_train,scoring = 'roc_auc', cv=5)))
-voting.fit(data_dummies_df,y_train)
-y_pred = voting.predict(holdout_dummies_df)
-print('ROC Score: ',roc_auc_score(y_test, y_pred))
-print("F1: %1.3f" % f1_score(y_test, y_pred, average='weighted'))
-
-#%%
-print('Voting Classifier with LRCV: ')
-reshaper = FunctionTransformer(lambda X_: np.rollaxis(X_, 1).reshape(-1, 6)[:, 1::2], validate=False)
-stacking = make_pipeline(voting, reshaper,
-                         LogisticRegressionCV())
-print('ROC Score: ',np.mean(cross_val_score(stacking,data_dummies_df, y_train, scoring = 'roc_auc',cv=5)))
-stacking.fit(data_dummies_df, y_train)
-y_pred = stacking.predict(holdout_dummies_df)
-print('ROC Score: ',roc_auc_score(y_test, y_pred))
-print("F1: %1.3f" % f1_score(y_test, y_pred, average='weighted'))
+#plot_conf_mat(y_test, y_pred, 'SVM')
+#
+##%%
+#plot_roc_curve(y_test, y_prob, 'SVM')
 
 #%%
 print('Undersampling with Logistic Regression:')
@@ -384,7 +361,6 @@ print('ROC Score: ',np.mean(scores))
 undersample_pipe.fit(data_dummies_df,y_train)
 y_pred = undersample_pipe.predict(holdout_dummies_df)
 y_prob = undersample_pipe.predict_proba(holdout_dummies_df)
-print('ROC Score: ',roc_auc_score(y_test, y_pred))
 print("F1: %1.3f" % f1_score(y_test, y_pred, average='weighted'))
 plot_conf_mat(y_test, y_pred, 'Undersample_LogR')
 
@@ -399,7 +375,6 @@ print('ROC Score: ',np.mean(scores))
 oversample_pipe.fit(data_dummies_df,y_train)
 y_pred = oversample_pipe.predict(holdout_dummies_df)
 y_prob = oversample_pipe.predict_proba(holdout_dummies_df)
-print('ROC Score: ',roc_auc_score(y_test, y_pred))
 print("F1: %1.3f" % f1_score(y_test, y_pred, average='weighted'))
 plot_conf_mat(y_test, y_pred, 'oversample_LogR')
 
@@ -419,7 +394,6 @@ print('ROC Score: ',np.mean(scores))
 undersample_pipe_rf.fit(data_dummies_df, y_train)
 y_pred = undersample_pipe.predict(holdout_dummies_df)
 y_prob = undersample_pipe_rf.predict_proba(holdout_dummies_df)
-print('ROC Score: ',roc_auc_score(y_test, y_pred))
 print("F1: %1.3f" % f1_score(y_test, y_pred, average='weighted'))
 plot_conf_mat(y_test, y_pred, 'Undersample_RF')
 
@@ -438,7 +412,6 @@ print('ROC Score: ',np.mean(scores))
 oversample_pipe_rf.fit(data_dummies_df, y_train)
 y_pred = oversample_pipe.predict(holdout_dummies_df)
 y_prob = oversample_pipe.predict_proba(holdout_dummies_df)
-print('ROC Score: ',roc_auc_score(y_test, y_pred))
 print("F1: %1.3f" % f1_score(y_test, y_pred, average='weighted'))
 plot_conf_mat(y_test, y_pred, 'oversample_RF')
 
@@ -447,6 +420,6 @@ plot_roc_curve(y_test, y_prob, 'oversample_RF')
 
 #%%
 k = ['LRCVSS', 'LRK', 'LRFS', 'LRL', 'LRPT', 'DT','RF1','RF2','RF_final','Undersample_LogR',\
-     'oversample_LogR','Undersample_RF','oversample_RF']
+     'oversample_LogR','Undersample_RF','oversample_RF','MLP','KNN']
 show_roc_plot(k,fpr_vals,tpr_vals)
 show_conf_mat(k,conf_mat_vals)

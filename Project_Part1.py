@@ -74,6 +74,15 @@ X_train, x_test, y_train, Y_test = train_test_split(X, y, test_size=0.2, stratif
 PCA
 """
 
+#classifiers = {'Gradient Boosting Classifier':GradientBoostingClassifier(),'Adaptive Boosting Classifier'
+#               :AdaBoostClassifier(),'Linear Discriminant Analysis':LinearDiscriminantAnalysis(),
+#               'Logistic Regression':LogisticRegression(),'Random Forest Classifier': RandomForestClassifier(),
+#               'K Nearest Neighbour':KNeighborsClassifier(7),'Decision Tree Classifier'
+#               :DecisionTreeClassifier(),'Gaussian Naive Bayes Classifier':GaussianNB(),
+#               'Support Vector Classifier':SVC(probability=True), 'Support Vector Classifier Linear':SVC(probability=True, kernel='linear'),
+#               'Perceptron':Perceptron(penalty='l2', max_iter = 1000),  
+#               'MLP': MLPClassifier(alpha=1, hidden_layer_sizes=(160,))}
+
 classifiers = {'Gradient Boosting Classifier':GradientBoostingClassifier(),'Adaptive Boosting Classifier'
                :AdaBoostClassifier(),'Linear Discriminant Analysis':LinearDiscriminantAnalysis(),
                'Logistic Regression':LogisticRegression(),'Random Forest Classifier': RandomForestClassifier(),
@@ -175,28 +184,3 @@ def plot_confusion_matrix(cm,
     plt.tight_layout()
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
-
-#%%
-    
-X_train, x_test, y_train, y_tst = train_test_split(X, y, test_size=0.2, stratify = y)
-skf = StratifiedShuffleSplit(n_splits=5, test_size=0.2,random_state=0)
-#skf = StratifiedKFold(n_splits=5, shuffle=True)   #Stratified K fold for 5 folds preserving percentage of each class 
-all_acc = []
-cnt=1
-for train_index, test_index in skf.split(X_train, y_train): #Cross Vaidating Data used for Training SVM classifier for 5 folds
-   y,y_test = y_train.iloc[train_index], y_train.iloc[test_index]
-   X,X_test = X_train.iloc[train_index], X_train.iloc[test_index] 
-   clf = SVC(C=1000,gamma=0.0001,kernel='rbf',probability=True)  # Create an object of SVM classifier
-   clf.fit(X_train, y_train)   # Train the classifier
-   y_pred = clf.predict(X_test)     # Predicting labels on Test Validation Data
-   print("Accuracy in fold {:d} =".format(cnt),"{:.4f}".format(m.accuracy_score(y_test, y_pred)*100))
-   all_acc.append(m.accuracy_score(y_test, y_pred))  #Calculate testing accuracy
-   cnt +=1
-#Calculating Mean accuracy over n folds
-print("Average of the 5 fold cross validation accuracy = {:.4f}".format(np.mean(all_acc)*100))
-y_prob = clf.predict_proba(x_test)
-y_pred = clf.predict(x_test)
-print("F1: %1.3f" % f1_score(y_tst, y_pred, average='weighted'))
-cm = confusion_matrix(y_tst, y_pred)
-print("Roc: ",roc_auc_score(y_tst,y_pred, average='weighted'))
-plot_confusion_matrix(cm)
