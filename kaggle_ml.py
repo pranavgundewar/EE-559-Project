@@ -6,7 +6,7 @@ from sklearn.linear_model import LogisticRegressionCV, LogisticRegression
 from sklearn.svm import LinearSVC
 from sklearn.neighbors import KNeighborsClassifier, NearestCentroid
 from sklearn.model_selection import cross_val_score
-from sklearn.feature_selection import f_regression, f_classif
+from sklearn.feature_selection import f_regression, f_classif, SelectKBest
 from sklearn.model_selection import GridSearchCV, StratifiedKFold, StratifiedShuffleSplit
 from sklearn.naive_bayes import MultinomialNB, BernoulliNB, GaussianNB
 from sklearn.linear_model import SGDClassifier, LassoCV
@@ -34,7 +34,6 @@ from sklearn.preprocessing import FunctionTransformer
 from sklearn.pipeline import make_union
 import itertools
 from sklearn.metrics import confusion_matrix
-from sklearn.preprocessing import FunctionTransformer
 # from xgboost import XGBClassifier
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -42,8 +41,9 @@ plt.rcParams["figure.dpi"] = 100
 
 #%%
 df = pd.read_csv("bank-additional-preprocessed-mf.csv")
-
+#df = pd.read_csv("bank-additional.csv")
 subscribed = df.y
+
 df = df.drop("y", axis=1)
 
 subscribed = subscribed == "yes"
@@ -52,39 +52,26 @@ subscribed = subscribed == "yes"
 #print(df.describe())
 #
 #print(df.describe(include=["object"]))
-
+df = df.drop("default", axis=1)
 categorical_vars = df.describe(include=["object"]).columns
 continuous_vars = df.describe().columns
+df = df.replace(to_replace=['unknown'], value = np.NaN , regex = True)
+#df.info()
 #print(continuous_vars)
 #print(categorical_vars)
-
-#_ = df.hist(column=continuous_vars, figsize = (15,15))
-
-# Count plots of categorical variables
-
-#fig, axes = plt.subplots(4, 3, figsize=(16, 16))
-#plt.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.7, hspace=0.3)
-#
-#for i, ax in enumerate(axes.ravel()):
-#    if i > 9:
-#        ax.set_visible(False)
-#        continue
-#    sns.countplot(y = categorical_vars[i], data=df, ax=ax)
-#
-#pd.plotting.scatter_matrix(df[continuous_vars], c=subscribed, alpha=.2, figsize=(15, 15), cmap="viridis");
 
 #%%
 # Creating dummy variables and finding different categorical and continous variables
 data_df, holdout_df, y_train, y_test = train_test_split(df, subscribed, test_size=0.2, stratify = subscribed)
 # Creating dummy variables
-data_dummies_df = pd.get_dummies(data_df, columns=categorical_vars, drop_first=True)
-holdout_dummies_df = pd.get_dummies(holdout_df, columns=categorical_vars, drop_first=True)
+data_dummies_df = pd.get_dummies(data_df, columns=categorical_vars, drop_first=False)
+holdout_dummies_df = pd.get_dummies(holdout_df, columns=categorical_vars, drop_first=False)
 
 fpr_vals = {}
 tpr_vals = {}
 #holdout_dummies_df['default_yes'] = 0
 #holdout_dummies_df = holdout_dummies_df[data_dummies_df.columns]
-categorical_dummies = pd.get_dummies(data_df[categorical_vars], drop_first=True).columns
+categorical_dummies = pd.get_dummies(data_df[categorical_vars], drop_first=False).columns
 
 select_categorical = FunctionTransformer(lambda X: X[categorical_dummies],validate = False)
 select_continuous = FunctionTransformer(lambda X: X[continuous_vars],validate = False)
@@ -157,14 +144,13 @@ pipe.fit(data_dummies_df, y_train)
 print('ROC Score: ',np.mean(cross_val_score(pipe, data_dummies_df, y_train, cv=5, scoring="roc_auc")))
 y_pred = pipe.predict(holdout_dummies_df)
 y_prob = pipe.predict_proba(holdout_dummies_df)
-print('ROC Score: ',roc_auc_score(y_test, y_pred))
 print("F1: %1.3f" % f1_score(y_test, y_pred, average='weighted'))
 
 #%%
-#plt.figure(figsize=(5, 15))
-#coef = pd.Series(pipe.named_steps['logisticregressioncv'].coef_.ravel(), index=data_dummies_df.columns)
-#coef.sort_values().plot(kind="barh")
-#plt.figure()
+plt.figure(figsize=(5, 15))
+coef = pd.Series(pipe.named_steps['logisticregressioncv'].coef_.ravel(), index=data_dummies_df.columns)
+coef.sort_values().plot(kind="barh")
+plt.figure()
 plot_roc_curve(y_test, y_prob, 'LRCVSS')
 
 
