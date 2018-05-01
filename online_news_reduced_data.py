@@ -85,6 +85,36 @@ data_twoclass_Y = data_original['two_class_popularity']
 data_multiclass_Y = data_original['multi_class_popularity']
 data_X = data_original.drop(['shares','two_class_popularity','multi_class_popularity', 'Unnamed: 40'], axis=1)
 
+
+#%%
+
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.svm import LinearSVC
+from sklearn.model_selection import cross_val_score
+models = [
+    RandomForestClassifier(n_estimators=200, max_depth=3, random_state=0),
+    LinearSVC(),
+    MultinomialNB(),
+    LogisticRegression(random_state=0),
+]
+CV = 5
+cv_df = pd.DataFrame(index=range(CV * len(models)))
+entries = []
+for model in models:
+  model_name = model.__class__.__name__
+  accuracies = cross_val_score(model, features, labels, scoring='accuracy', cv=CV)
+  for fold_idx, accuracy in enumerate(accuracies):
+    entries.append((model_name, fold_idx, accuracy))
+cv_df = pd.DataFrame(entries, columns=['model_name', 'fold_idx', 'accuracy'])
+import seaborn as sns
+sns.boxplot(x='model_name', y='accuracy', data=cv_df)
+sns.stripplot(x='model_name', y='accuracy', data=cv_df, 
+              size=8, jitter=True, edgecolor="gray", linewidth=2)
+plt.show()
+
+
 #%%
 def PCA_dim_reduction(X,dim):
     pca = PCA(n_components=dim)
