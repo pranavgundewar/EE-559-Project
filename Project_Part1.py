@@ -1,6 +1,6 @@
 """
 Final Project for EE 559 Spring 2018
-Program by :
+Program by : 
 @authors   : Pranav Gundewar    Aditya Killekar  
 USC ID     : 4463612994         2051450417
 Email      : gundewar@usc.edu   killekar@usc.edu

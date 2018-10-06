@@ -218,7 +218,6 @@ def plot_confusion_matrix(cm,
     plt.xlabel('Predicted label')
 
 #%%
-    
 X_train, x_test, y_train, y_tst = train_test_split(X, y, test_size=0.2, stratify = y)
 skf = StratifiedShuffleSplit(n_splits=5, test_size=0.2,random_state=0)
 #skf = StratifiedKFold(n_splits=5, shuffle=True)   #Stratified K fold for 5 folds preserving percentage of each class 
